@@ -4,16 +4,9 @@ from pathlib import Path
 
 import pytest
 from fastapi import status
-from fastapi.testclient import TestClient
 from git import InvalidGitRepositoryError, Repo
 
-from nos_config_collector import app, settings
-
-
-@pytest.fixture
-def test_client():
-    """Provide an API test client."""
-    return TestClient(app)
+from nos_config_collector import settings
 
 
 @pytest.fixture

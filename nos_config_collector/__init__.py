@@ -2,10 +2,13 @@
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.templating import Jinja2Templates
 from git import InvalidGitRepositoryError, Repo
 from git.util import Actor
 from pydantic import BaseModel
 from pydantic.env_settings import BaseSettings
+from fastapi.responses import HTMLResponse
+from fastapi.requests import Request
 
 
 class Settings(BaseSettings):
@@ -30,6 +33,12 @@ class Configuration(BaseModel):
 
 settings = Settings()
 app = FastAPI()
+templates = Jinja2Templates(directory="nos_config_collector/templates")
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/configurations/")
