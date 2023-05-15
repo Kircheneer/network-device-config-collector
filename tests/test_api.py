@@ -145,3 +145,15 @@ def test_post_config_changes_pushed(repository_path, test_client, source_reposit
     assert branch_name in [
         branch.name for branch in source_repository.branches
     ], "Branch wasn't pushed to remote repository"
+
+
+def test_post_config_twice(repository_path, test_client):
+    """Assert that two configurations may be posted."""
+    configurations = ["first config", "second config"]
+    for configuration in configurations:
+        post_configuration(test_client=test_client, json={"content": configuration})
+
+    expected_amount_of_configurations = 2
+    assert (
+        len(list(repository_path.glob("*.conf"))) == expected_amount_of_configurations
+    ), "Committing a second configuration didn't work"
