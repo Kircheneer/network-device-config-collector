@@ -40,12 +40,18 @@ async def post_config(configuration: Configuration):
     except InvalidGitRepositoryError:
         repository = Repo.clone_from(url=settings.ncc_repository_url, to_path=settings.ncc_config_directory)
 
-    file_name = str(hash(configuration.content))
+    # Write configuration to the repository
+    file_name = str(abs(hash(configuration.content)))  # We convert the hash to a positive number
     file_path = settings.ncc_config_directory / f"{file_name}.conf"
     with open(file_path, encoding="utf-8", mode="w") as f:
         f.write(configuration.content)
 
-    repository.create_head(file_name).checkout()
+    # Create commit with local changes
+    branch_name = f"add/{file_name}"
+    repository.git.checkout("-b", branch_name)
     repository.index.add(str(file_path))
     actor = Actor(name=configuration.author, email=configuration.email)
     repository.index.commit(message=f"add: added configuration with hash {file_name}", author=actor)
+
+    # Push branch to the upstream
+    repository.git.push("--set-upstream", "origin", branch_name)

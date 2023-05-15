@@ -1,4 +1,5 @@
 """API tests for nos-config-collector."""
+import shutil
 from pathlib import Path
 
 import pytest
@@ -16,21 +17,25 @@ def test_client():
 
 
 @pytest.fixture
-def repository_path(tmpdir):
+def repository_path(tmp_path):
     """Create a temporary directory and initialize an empty repository into it."""
-    path = Path(tmpdir.mkdir("clone_to"))
+    path = tmp_path / "clone_to"
+    path.mkdir()
     settings.ncc_config_directory = path
-    return path
+    yield path
+    shutil.rmtree(path)
 
 
 @pytest.fixture(autouse=True)
-def source_repository(tmpdir):
+def source_repository(tmp_path):
     """Create an empty repository to clone from."""
-    path = tmpdir.mkdir("clone_from")
+    path = tmp_path / "clone_from"
+    path.mkdir()
     settings.ncc_repository_url = path
     repository = Repo.init(path)
     repository.index.commit(message="initial commit")
-    return repository
+    yield repository
+    shutil.rmtree(path)
 
 
 def post_configuration(test_client, json):
@@ -50,7 +55,7 @@ def test_post_empty_config(repository_path, test_client):
     directory_content = [item for item in repository_path.iterdir() if item.name != ".git"]
     assert len(directory_content) == 1, base_assert_message + "generated an amount != 1 of directory items"
 
-    file = repository_path / f"{hash(configuration)}.conf"
+    file = repository_path / f"{abs(hash(configuration))}.conf"
     try:
         with open(file) as f:
             assert configuration == f.read(), base_assert_message + "generated a non-empty file"
@@ -65,7 +70,7 @@ def test_post_non_empty_config(repository_path, test_client):
 
     base_assert_message = "Posting a simple config "
     assert response.status_code == status.HTTP_200_OK, base_assert_message + "led to a non-200 HTTP status code"
-    with open(repository_path / f"{hash(configuration)}.conf") as f:
+    with open(repository_path / f"{abs(hash(configuration))}.conf") as f:
         assert configuration == f.read(), base_assert_message + "did not write that config to the file"
 
 
@@ -97,7 +102,7 @@ def test_post_config_git_metadata(repository_path, test_client):
     repository = Repo(repository_path)
     assert repository.head.commit.author.name == author
     assert repository.head.commit.author.email == email
-    assert repository.head.commit.message == f"add: added configuration with hash {hash(configuration)}"
+    assert repository.head.commit.message == f"add: added configuration with hash {abs(hash(configuration))}"
 
 
 def test_post_config_no_content(repository_path, test_client):
@@ -129,11 +134,14 @@ def test_post_config_no_existing_repository(repository_path, test_client, source
     ), "Existing configurations were not pulled"
 
 
-def test_post_config_changes_pushed(test_client, source_repository):
+def test_post_config_changes_pushed(repository_path, test_client, source_repository):
     """Assert that the posted changes are committed to a branch."""
     configuration = ""
     post_configuration(test_client=test_client, json={"content": configuration})
 
-    assert str(hash(configuration)) in [
+    positive_config_hash = str(abs(hash(configuration)))
+    branch_name = f"add/{positive_config_hash}"
+
+    assert branch_name in [
         branch.name for branch in source_repository.branches
     ], "Branch wasn't pushed to remote repository"
