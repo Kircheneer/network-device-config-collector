@@ -1,0 +1,55 @@
+[tool.poetry]
+name = "nos-config-collector"
+version = "0.0.1"
+description = ""
+authors = ["Leo Kirchner <leo@kirchne.red>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+fastapi = ">=0.95.1"
+uvicorn = ">=0.22.0"
+gitpython = ">=3.1.31"
+
+[tool.poetry.group.dev.dependencies]
+commitizen = ">=3.2.2"
+pytest = ">=7.3.1"
+httpx = ">=0.24.0"
+ruff = ">=0.0.267"
+black = ">=23.1.0"
+
+[tool.ruff]
+select = [
+    "E",
+    "F",
+    "S",  # bandit
+    "PL",  # pylint
+    "I",  # isort
+    "D",  # pydocstyle
+]
+ignore = [
+    "E501",  # handled by Black
+    "D212",
+    "D203",
+    "S101"
+]
+# Same as Black.
+line-length = 88
+target-version = "py37"
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+tag_format = "$version"
+version_type = "semver"
+version_provider = "poetry"
+update_changelog_on_bump = true
+major_version_zero = true
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
