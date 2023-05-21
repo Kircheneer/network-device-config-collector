@@ -150,3 +150,55 @@ def test_post_config_twice(repository_path, test_client):
     assert (
         len(list(repository_path.glob("*.conf"))) == expected_amount_of_configurations
     ), "Committing a second configuration didn't work"
+
+
+def test_post_anonymize(test_client):
+    """Test that anonymizing an empty config returns an empty config."""
+    configuration = ""
+    response = test_client.post("/configurations/anonymize/", json={"content": configuration})
+    response.raise_for_status()
+    anonymized_configuration = response.json()
+    assert anonymized_configuration["content"] == configuration
+
+
+def test_post_anonymize_one_line(test_client):
+    """Test that anonymizing a single, non-sensitive configuration line retains that line as-is."""
+    input_configuration = "hostname test-device"
+    response = test_client.post("/configurations/anonymize/", json={"content": input_configuration})
+    response.raise_for_status()
+    anonymized_configuration = response.json()
+    assert (
+        anonymized_configuration["content"] == input_configuration
+    ), "Unsensitive configuration not preserved properly during anonymization"
+
+
+def test_post_anonymization(test_client, mocker):
+    """Test that anonymization of a password works."""
+    password = "mypassword"  # noqa: S105
+
+    # Mock netconan implementation
+    def _mocked_anonymize_configuration(configuration, **_):
+        return [line.replace(password, "$censored") for line in configuration]
+
+    mocker.patch("netconan.anonymize_files.anonymize_configuration", _mocked_anonymize_configuration)
+    input_configuration = f"password {password}"
+
+    response = test_client.post("/configurations/anonymize/", json={"content": input_configuration})
+    response.raise_for_status()
+    anonymized_configuration = response.json()
+    assert (
+        password not in anonymized_configuration["content"]
+    ), "Password was not anonymized properly, is netconan being used?"
+
+
+def test_post_anonymization_sensitive_words(test_client):
+    """Test that sensitive words can be passed to the anonymizer."""
+    input_configuration = "sensitive"
+    response = test_client.post(
+        "/configurations/anonymize/", json={"content": input_configuration, "sensitive_words": ["sensitive"]}
+    )
+    response.raise_for_status()
+    anonymized_configuration = response.json()
+    assert (
+        "sensitive" not in anonymized_configuration["content"]
+    ), "Sensitive words functionality for config anonymization not working"

@@ -1,12 +1,13 @@
 """Web service to collect, anonymize and save network device configuration files."""
-from pathlib import Path
 from importlib import resources
+from pathlib import Path
 
+import netconan.anonymize_files
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from git import InvalidGitRepositoryError, Repo
 from git.util import Actor
 from pydantic import BaseModel
@@ -20,17 +21,36 @@ class Settings(BaseSettings):
     ncc_repository_url: Path = Path()
 
 
-class Configuration(BaseModel):
-    """Store data for configuration POSTing."""
-
-    content: str
-    author: str | None
-    email: str | None
+class BaseSchema(BaseModel):
+    """Base schema for all endpoints."""
 
     class Config:
         """Forbid extra fields, causing 422 if any such fields are posted."""
 
         extra = "forbid"
+        abstract = True
+
+
+class ConfigurationToStore(BaseSchema):
+    """Configuration to be stored in git."""
+
+    content: str
+    author: str | None
+    email: str | None
+
+
+class ConfigurationToAnonymize(BaseSchema):
+    """Return schema for anonymized configurations."""
+
+    content: str
+    # TODO: Empty list causes weird things to happen with netconan.
+    sensitive_words: list[str] = ["verylongstringthathopefullydoesn'tappearintheconfig"]
+
+
+class AnonymizedConfiguration(BaseSchema):
+    """Configuration to be anonymized."""
+
+    content: str
 
 
 settings = Settings()
@@ -46,8 +66,35 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.post("/configurations/anonymize/")
+async def anonymize_config(configuration: ConfigurationToAnonymize):
+    """
+    Return the same config anonymized through netconan.
+
+    Depends on this: https://github.com/intentionet/netconan/pull/186
+    """
+    anonymizer_configuration = {
+        "anon_ip": True,
+        "anon_pwd": True,
+        "as_numbers": None,
+        "preserve_networks": None,
+        "preserve_prefixes": None,
+        "preserve_suffix_v4": None,
+        "preserve_suffix_v6": None,
+        "reserved_words": None,
+        "undo_ip_anon": False,
+        "salt": "ncc",
+        "sensitive_words": configuration.sensitive_words,
+    }
+    anonymizers = netconan.anonymize_files.build_anonymizers(anonymizer_configuration)
+    anonymized_configuration = netconan.anonymize_files.anonymize_configuration(
+        configuration.content.splitlines(), **anonymizers
+    )
+    return AnonymizedConfiguration(content="\n".join(anonymized_configuration))
+
+
 @app.post("/configurations/")
-async def post_config(configuration: Configuration):
+async def post_config(configuration: ConfigurationToStore):
     """Post configurations."""
     try:
         repository = Repo(settings.ncc_config_directory)

@@ -20,6 +20,7 @@ pytest = ">=7.3.1"
 httpx = ">=0.24.0"
 ruff = ">=0.0.267"
 black = ">=23.1.0"
+pytest-mock = "^3.10.0"
 
 [tool.ruff]
 select = [
