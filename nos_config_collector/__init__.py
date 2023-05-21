@@ -48,7 +48,7 @@ class ConfigurationToAnonymize(BaseSchema):
     @validator("sensitive_words")
     def no_empty_sensitive_words(cls, value):
         """Remove any empty strings from 'sensitive_words'."""
-        return [item for item in value if item.strip() != ""]
+        return [item for item in value if item.strip()]
 
     content: str
     sensitive_words: list[str] = []
