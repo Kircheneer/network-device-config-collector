@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from git import InvalidGitRepositoryError, Repo
 from git.util import Actor
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
 
 
@@ -42,9 +42,13 @@ class ConfigurationToStore(BaseSchema):
 class ConfigurationToAnonymize(BaseSchema):
     """Return schema for anonymized configurations."""
 
+    @validator("sensitive_words")
+    def no_empty_sensitive_words(cls, value):
+        """Remove any empty strings from 'sensitive_words'."""
+        return [item for item in value if item.strip() != ""]
+
     content: str
-    # TODO: Empty list causes weird things to happen with netconan.
-    sensitive_words: list[str] = ["verylongstringthathopefullydoesn'tappearintheconfig"]
+    sensitive_words: list[str] = []
 
 
 class AnonymizedConfiguration(BaseSchema):
@@ -73,6 +77,9 @@ async def anonymize_config(configuration: ConfigurationToAnonymize):
 
     Depends on this: https://github.com/intentionet/netconan/pull/186
     """
+    # Empty sensitive words list causes netconan to freak out a little
+    if not configuration.sensitive_words:
+        configuration.sensitive_words = ["verylongstringthathopefullydoesn'tappearintheconfig"]
     anonymizer_configuration = {
         "anon_ip": True,
         "anon_pwd": True,

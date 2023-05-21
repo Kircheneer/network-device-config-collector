@@ -9,7 +9,7 @@
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 </head>
 <body>
-<div class="container">
+<div class="container-fluid">
     <header class="d-flex align-items-center justify-content-md-between py-3 mb-4 border-bottom bg-light">
         <a href="https://github.com/Kircheneer/network-device-config-collector">
             <img width=50 src="/static/github-mark.png">
@@ -20,21 +20,37 @@
         </a>
     </header>
 </div>
-<div class="container">
+<div class="container-fluid">
     <div class="row pb-3">
-        <form>
-            <div class="col-8">
-                <div class="form-group">
-                    <label for="configTextarea">Input Configuration</label>
-                    <textarea style="font-family:monospace;" class="form-control" id="configTextarea"
-                              rows="20"></textarea>
-                </div>
+        <div class="col-9">
+            <label for="configTextarea">Configuration</label>
+            <textarea style="font-family:monospace;" class="form-control mb-3" id="configTextarea"
+                      rows="20"></textarea>
+            <div class="btn-group" role="group" aria-label="Control button group">
+                <button onclick="anonymize_configuration()" class="btn btn-primary" id="anonymizeButton">Anonymize
+                </button>
+                <button onclick="submit_configuration()" class="btn btn-outline-primary" id="submitButton">Submit
+                </button>
             </div>
-            <div class="col-4">
-                Something goes here!
+        </div>
+        <div class="col-3">
+            <div class="mb-3">
+                <label for="sensitiveWordsTextarea">Sensitive Words (one per line)</label>
+                <textarea style="font-family:monospace;" class="form-control" id="sensitiveWordsTextarea"
+                          rows="5" aria-describedby="sensitiveWordsTextareaHelp"></textarea>
+                <div id="sensitiveWordsTextareaHelp" class="form-text">These are removed from the config automatically.</div>
             </div>
-        </form>
-
+            <div class="mb-3">
+                <label for="nameInput" class="form-label">Name (optional)</label>
+                <input class="form-control" id="nameInput" aria-describedby="nameInputHelp">
+                <div id="nameInputHelp" class="form-text">This is used for the commit on GitHub.</div>
+            </div>
+            <div class="mb-3">
+                <label for="githubMailInput" class="form-label">GitHub Mail (optional)</label>
+                <input type="email" class="form-control" id="githubMailInput" aria-describedby="githubMailInputHelp">
+                <div id="githubMailInputHelp" class="form-text">This is used for attribution on GitHub.</div>
+            </div>
+        </div>
     </div>
     <div class="row">
         <h2>FAQ</h2>
@@ -73,5 +89,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
         crossorigin="anonymous"></script>
+<script src="/static/script.js"></script>
 </body>
 </html>
