@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     """Settings for ncc."""
 
     ncc_config_directory: Path
-    ncc_repository_url: Path
+    ncc_repository_url: str
 
     class Config:  # noqa: D106
         env_file = ".env.test"
