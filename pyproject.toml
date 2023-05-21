@@ -11,6 +11,8 @@ fastapi = ">=0.95.1"
 uvicorn = ">=0.22.0"
 gitpython = ">=3.1.31"
 jinja2 = ">=3.1.2"
+# Until https://github.com/intentionet/netconan/pull/186 is merged
+netconan = { git = "https://github.com/Kircheneer/netconan", branch = "lk-in-memory-operations" }
 
 [tool.poetry.group.dev.dependencies]
 commitizen = ">=3.2.2"
