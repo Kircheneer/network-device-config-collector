@@ -1,10 +1,12 @@
 """Web service to collect, anonymize and save network device configuration files."""
 from pathlib import Path
+from importlib import resources
 
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from git import InvalidGitRepositoryError, Repo
 from git.util import Actor
 from pydantic import BaseModel
@@ -33,6 +35,8 @@ class Configuration(BaseModel):
 
 settings = Settings()
 app = FastAPI()
+static_directory = resources.files("nos_config_collector") / "static"
+app.mount("/static", StaticFiles(directory=static_directory), name="static")
 templates = Jinja2Templates(directory="nos_config_collector/templates")
 
 
