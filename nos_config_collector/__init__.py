@@ -20,9 +20,6 @@ class Settings(BaseSettings):
     ncc_config_directory: Path
     ncc_repository_url: str
 
-    class Config:  # noqa: D106
-        env_file = ".env.test"
-
 
 class BaseSchema(BaseModel):
     """Base schema for all endpoints."""
