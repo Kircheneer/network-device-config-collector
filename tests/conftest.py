@@ -1,4 +1,5 @@
 """Test configuration for network-device-config-collector."""
+
 import pytest
 from starlette.testclient import TestClient
 

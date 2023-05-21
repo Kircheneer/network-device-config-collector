@@ -17,8 +17,11 @@ from pydantic.env_settings import BaseSettings
 class Settings(BaseSettings):
     """Settings for ncc."""
 
-    ncc_config_directory: Path = Path()
-    ncc_repository_url: Path = Path()
+    ncc_config_directory: Path
+    ncc_repository_url: Path
+
+    class Config:  # noqa: D106
+        env_file = ".env.test"
 
 
 class BaseSchema(BaseModel):
