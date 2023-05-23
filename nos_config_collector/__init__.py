@@ -1,5 +1,6 @@
 """Web service to collect, anonymize and save network device configuration files."""
 from importlib import resources
+from importlib.resources import files
 from pathlib import Path
 
 import netconan.anonymize_files
@@ -64,7 +65,13 @@ class AnonymizedConfiguration(BaseSchema):
     content: str
 
 
-settings = Settings()
+# Apply settings from file if present
+config_file = Path(str(files("nos_config_collector"))).parent / "config.env"
+if config_file.is_file():
+    settings = Settings(_env_file=str(config_file), _env_file_encoding="utf-8")
+else:
+    settings = Settings()
+
 app = FastAPI()
 static_directory = resources.files("nos_config_collector") / "static"
 app.mount("/static", StaticFiles(directory=str(static_directory)), name="static")
