@@ -3,6 +3,7 @@ from importlib import resources
 from pathlib import Path
 
 import netconan.anonymize_files
+import requests
 from fastapi import FastAPI
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
@@ -21,6 +22,10 @@ class Settings(BaseSettings):
 
     ncc_config_directory: Path
     ncc_repository_url: str
+    ncc_repository_owner: str
+    ncc_repository_name: str
+    ncc_github_token: str
+    ncc_base_branch: str = "main"
 
 
 class BaseSchema(BaseModel):
@@ -106,22 +111,42 @@ async def anonymize_config(configuration: ConfigurationToAnonymize) -> Anonymize
 async def post_config(configuration: ConfigurationToStore) -> None:
     """Post configurations."""
     try:
+        settings.ncc_config_directory.mkdir(parents=True, exist_ok=True)
         repository = Repo(settings.ncc_config_directory)
     except InvalidGitRepositoryError:
         repository = Repo.clone_from(url=settings.ncc_repository_url, to_path=settings.ncc_config_directory)
 
     # Write configuration to the repository
     file_name = str(abs(hash(configuration.content)))  # We convert the hash to a positive number
-    file_path = settings.ncc_config_directory / f"{file_name}.conf"
+    file_path = settings.ncc_config_directory / "configurations" / f"{file_name}.conf"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, encoding="utf-8", mode="w") as f:
         f.write(configuration.content)
 
     # Create commit with local changes
     branch_name = f"add/{file_name}"
-    repository.git.checkout("-b", branch_name)
+    repository.git.checkout("-b", branch_name, settings.ncc_base_branch)
     repository.index.add(str(file_path))
     actor = Actor(name=configuration.author, email=configuration.email)
     repository.index.commit(message=f"add: added configuration with hash {file_name}", author=actor)
 
     # Push branch to the upstream
     repository.git.push("--set-upstream", "origin", branch_name)
+
+    # Create a PR on GitHub
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {settings.ncc_github_token}",
+    }
+    payload = {
+        "title": "Add new configuration file submitted through the network-device-config-collector",
+        "head": f"{settings.ncc_repository_owner}:{branch_name}",
+        "base": settings.ncc_base_branch,
+        "body": "Pull Request submitted through the network-device-config-collector.",
+    }
+    response = requests.post(
+        f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_name}/pulls",
+        headers=headers,
+        json=payload,
+    )
+    response.raise_for_status()

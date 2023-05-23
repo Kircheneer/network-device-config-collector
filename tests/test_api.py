@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+import requests_mock
 from fastapi import status
 from git import InvalidGitRepositoryError, Repo
 
@@ -15,6 +16,7 @@ def repository_path(tmp_path):
     path = tmp_path / "clone_to"
     path.mkdir()
     settings.ncc_config_directory = path
+    Repo.init(path, initial_branch=settings.ncc_base_branch)
     yield path
     shutil.rmtree(path)
 
@@ -25,7 +27,7 @@ def source_repository(tmp_path):
     path = tmp_path / "clone_from"
     path.mkdir()
     settings.ncc_repository_url = path
-    repository = Repo.init(path)
+    repository = Repo.init(path, initial_branch=settings.ncc_base_branch)
     repository.index.commit(message="initial commit")
     yield repository
     shutil.rmtree(path)
@@ -150,6 +152,18 @@ def test_post_config_twice(repository_path, test_client):
     assert (
         len(list(repository_path.glob("*.conf"))) == expected_amount_of_configurations
     ), "Committing a second configuration didn't work"
+
+
+def test_post_config_github_upload(repository_path, test_client):
+    """Test that a POST request to the GitHub API would be performed."""
+    configuration = "test config"
+    with requests_mock.Mocker() as requests_mocker:
+        requests_mocker.post(
+            f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_owner}/pulls"
+        )
+        post_configuration(test_client=test_client, json={"content": configuration})
+
+    assert requests_mocker.last_request is not None
 
 
 def test_post_anonymize(test_client):
