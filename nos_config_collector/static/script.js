@@ -51,4 +51,11 @@ async function submit_configuration() {
         },
         body: JSON.stringify(data)
     })
+    const responseAsJSON = await response.json()
+    const toast = document.getElementById("resultToast")
+    if (responseAsJSON.pr_link) {
+        toast.value = `<a href=${responseAsJSON.pr_link}>PR</a> created.`
+    } else {
+        toast.value = `Error during creation of PR: ${responseAsJSON.error}.`
+    }
 }

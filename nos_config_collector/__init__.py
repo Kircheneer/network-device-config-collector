@@ -1,4 +1,6 @@
 """Web service to collect, anonymize and save network device configuration files."""
+import logging
+import os
 from importlib import resources
 from importlib.resources import files
 from pathlib import Path
@@ -10,11 +12,13 @@ from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from git import InvalidGitRepositoryError
+from git import GitCommandError, InvalidGitRepositoryError
 from git.repo import Repo
 from git.util import Actor
 from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
+from starlette import status
+from starlette.responses import JSONResponse
 from starlette.templating import _TemplateResponse
 
 
@@ -27,6 +31,7 @@ class Settings(BaseSettings):
     ncc_repository_name: str
     ncc_github_token: str
     ncc_base_branch: str = "main"
+    ncc_log_level: int = logging.WARNING
 
 
 class BaseSchema(BaseModel):
@@ -45,6 +50,13 @@ class ConfigurationToStore(BaseSchema):
     content: str
     author: str | None
     email: str | None
+
+
+class StoredConfigurationResponse(BaseSchema):
+    """Response schema for a configuration storage."""
+
+    pr_link: str | None
+    error: str | None
 
 
 class ConfigurationToAnonymize(BaseSchema):
@@ -67,10 +79,12 @@ class AnonymizedConfiguration(BaseSchema):
 
 # Apply settings from file if present
 config_file = Path(str(files("nos_config_collector"))).parent / "config.env"
-if config_file.is_file():
+if config_file.is_file() and os.environ.get("NCC_DEVELOPMENT", False):
     settings = Settings(_env_file=str(config_file), _env_file_encoding="utf-8")
 else:
     settings = Settings()
+
+logging.basicConfig(level=settings.ncc_log_level)
 
 app = FastAPI()
 static_directory = resources.files("nos_config_collector") / "static"
@@ -115,7 +129,7 @@ async def anonymize_config(configuration: ConfigurationToAnonymize) -> Anonymize
 
 
 @app.post("/configurations/")
-async def post_config(configuration: ConfigurationToStore) -> None:
+async def post_config(configuration: ConfigurationToStore) -> JSONResponse:
     """Post configurations."""
     try:
         settings.ncc_config_directory.mkdir(parents=True, exist_ok=True)
@@ -132,7 +146,15 @@ async def post_config(configuration: ConfigurationToStore) -> None:
 
     # Create commit with local changes
     branch_name = f"add/{file_name}"
-    repository.git.checkout("-b", branch_name, settings.ncc_base_branch)
+    try:
+        repository.git.checkout("-b", branch_name, settings.ncc_base_branch)
+    except GitCommandError as error:
+        logging.debug(f"Error when trying to create new branch for configuration: {error}.")
+        return JSONResponse(
+            content={"error": "This configuration is already present in the collection.", "pr_link": None},
+            status_code=status.HTTP_409_CONFLICT,
+        )
+
     repository.index.add(str(file_path))
     actor = Actor(name=configuration.author, email=configuration.email)
     repository.index.commit(message=f"add: added configuration with hash {file_name}", author=actor)
@@ -156,4 +178,13 @@ async def post_config(configuration: ConfigurationToStore) -> None:
         headers=headers,
         json=payload,
     )
-    response.raise_for_status()
+
+    pr_link = None
+    error = None
+
+    if response.ok:
+        pr_link = response.json()["url"]
+    else:
+        error = response.text
+
+    return JSONResponse(content={"pr_link": pr_link, "error": error}, status_code=status.HTTP_200_OK)
