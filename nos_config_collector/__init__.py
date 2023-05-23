@@ -8,10 +8,12 @@ from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from git import InvalidGitRepositoryError, Repo
+from git import InvalidGitRepositoryError
+from git.repo import Repo
 from git.util import Actor
 from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
+from starlette.templating import _TemplateResponse
 
 
 class Settings(BaseSettings):
@@ -43,7 +45,7 @@ class ConfigurationToAnonymize(BaseSchema):
     """Return schema for anonymized configurations."""
 
     @validator("sensitive_words")
-    def no_empty_sensitive_words(cls, value):
+    def no_empty_sensitive_words(cls, value: list[str]) -> list[str]:
         """Remove any empty strings from 'sensitive_words'."""
         return [item for item in value if item.strip()]
 
@@ -60,18 +62,18 @@ class AnonymizedConfiguration(BaseSchema):
 settings = Settings()
 app = FastAPI()
 static_directory = resources.files("nos_config_collector") / "static"
-app.mount("/static", StaticFiles(directory=static_directory), name="static")
+app.mount("/static", StaticFiles(directory=str(static_directory)), name="static")
 templates = Jinja2Templates(directory="nos_config_collector/templates")
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+async def index(request: Request) -> _TemplateResponse:
     """Index page that shows the form for configuration submitting."""
     return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.post("/configurations/anonymize/")
-async def anonymize_config(configuration: ConfigurationToAnonymize):
+async def anonymize_config(configuration: ConfigurationToAnonymize) -> AnonymizedConfiguration:
     """
     Return the same config anonymized through netconan.
 
@@ -101,7 +103,7 @@ async def anonymize_config(configuration: ConfigurationToAnonymize):
 
 
 @app.post("/configurations/")
-async def post_config(configuration: ConfigurationToStore):
+async def post_config(configuration: ConfigurationToStore) -> None:
     """Post configurations."""
     try:
         repository = Repo(settings.ncc_config_directory)

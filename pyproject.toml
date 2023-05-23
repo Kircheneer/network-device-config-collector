@@ -22,6 +22,7 @@ httpx = ">=0.24.0"
 ruff = ">=0.0.267"
 black = ">=23.1.0"
 pytest-mock = "^3.10.0"
+mypy = "^1.3.0"
 
 [tool.ruff]
 select = [
@@ -53,6 +54,10 @@ major_version_zero = true
 [tool.black]
 line-length = 120
 target-version = ['py311']
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
 
 [build-system]
 requires = ["poetry-core"]
