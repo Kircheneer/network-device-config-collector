@@ -191,10 +191,12 @@ def test_post_anonymization(test_client, mocker):
     password = "mypassword"  # noqa: S105
 
     # Mock netconan implementation
-    def _mocked_anonymize_configuration(configuration, **_):
-        return [line.replace(password, "$censored") for line in configuration]
+    class FakeFileAnonymizer:
+        def _mocked_anonymize_configuration(self, io_in, io_out):
+            for line in io_in:
+                io_out.write(line.replace(password, "$censored"))
 
-    mocker.patch("netconan.anonymize_files.anonymize_configuration", _mocked_anonymize_configuration)
+    mocker.patch("netconan.anonymize_files.FileAnonymizer", FakeFileAnonymizer)
     input_configuration = f"password {password}"
 
     response = test_client.post("/configurations/anonymize/", json={"content": input_configuration})

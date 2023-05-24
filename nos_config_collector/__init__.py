@@ -3,9 +3,9 @@ import logging
 import os
 from importlib import resources
 from importlib.resources import files
+from io import StringIO
 from pathlib import Path
 
-import netconan.anonymize_files
 import requests
 from fastapi import FastAPI
 from fastapi.requests import Request
@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 from git import GitCommandError, InvalidGitRepositoryError
 from git.repo import Repo
 from git.util import Actor
+from netconan.anonymize_files import FileAnonymizer
 from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
 from starlette import status
@@ -108,24 +109,15 @@ async def anonymize_config(configuration: ConfigurationToAnonymize) -> Anonymize
     # Empty sensitive words list causes netconan to freak out a little
     if not configuration.sensitive_words:
         configuration.sensitive_words = ["verylongstringthathopefullydoesn'tappearintheconfig"]
-    anonymizer_configuration = {
-        "anon_ip": True,
-        "anon_pwd": True,
-        "as_numbers": None,
-        "preserve_networks": None,
-        "preserve_prefixes": None,
-        "preserve_suffix_v4": None,
-        "preserve_suffix_v6": None,
-        "reserved_words": None,
-        "undo_ip_anon": False,
-        "salt": "ncc",
-        "sensitive_words": configuration.sensitive_words,
-    }
-    anonymizers = netconan.anonymize_files.build_anonymizers(anonymizer_configuration)
-    anonymized_configuration = netconan.anonymize_files.anonymize_configuration(
-        configuration.content.splitlines(), **anonymizers
+    anonymized_configuration = StringIO()
+    anonymizer = FileAnonymizer(
+        anon_ip=True,
+        anon_pwd=True,
+        salt="ncc",
+        sensitive_words=configuration.sensitive_words,
     )
-    return AnonymizedConfiguration(content="\n".join(anonymized_configuration))
+    anonymizer.anonymize_io(StringIO(configuration.content), anonymized_configuration)
+    return AnonymizedConfiguration(content=anonymized_configuration.getvalue())
 
 
 @app.post("/configurations/")
