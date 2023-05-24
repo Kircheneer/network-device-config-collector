@@ -16,7 +16,7 @@ def repository_path(tmp_path):
     path = tmp_path / "clone_to"
     path.mkdir()
     settings.ncc_config_directory = path
-    Repo.init(path, initial_branch=settings.ncc_base_branch)
+    #Repo.init(path, initial_branch=settings.ncc_base_branch)
     yield path
     shutil.rmtree(path)
 
@@ -50,7 +50,7 @@ def test_post_empty_config(repository_path, test_client):
     directory_content = [item for item in repository_path.iterdir() if item.name != ".git"]
     assert len(directory_content) == 1, base_assert_message + "generated an amount != 1 of directory items"
 
-    file = repository_path / f"{abs(hash(configuration))}.conf"
+    file = repository_path / "configurations" / f"{abs(hash(configuration))}.conf"
     try:
         with open(file) as f:
             assert configuration == f.read(), base_assert_message + "generated a non-empty file"
@@ -65,7 +65,7 @@ def test_post_non_empty_config(repository_path, test_client):
 
     base_assert_message = "Posting a simple config "
     assert response.status_code == status.HTTP_200_OK, base_assert_message + "led to a non-200 HTTP status code"
-    with open(repository_path / f"{abs(hash(configuration))}.conf") as f:
+    with open(repository_path / "configurations" / f"{abs(hash(configuration))}.conf") as f:
         assert configuration == f.read(), base_assert_message + "did not write that config to the file"
 
 
@@ -115,17 +115,20 @@ def test_post_config_extra_content(repository_path, test_client):
 def test_post_config_no_existing_repository(repository_path, test_client, source_repository):
     """Assert that given a non-cloned repository the repository is cloned."""
     filename = "existing_config.conf"
-    with open(Path(source_repository.working_tree_dir) / filename, "w") as f:
+    configurations_dir_source = Path(source_repository.working_tree_dir) / "configurations"
+    configurations_dir_source.mkdir(exist_ok=True)
+    with open(configurations_dir_source / filename, "w") as f:
         f.write("existing config")
-    source_repository.index.add(filename)
+    source_repository.index.add(f"configurations/{filename}")
     source_repository.index.commit(message="")
 
     configuration = ""
     post_configuration(test_client=test_client, json={"content": configuration})
 
+    configurations_dir_target = repository_path / "configurations"
     expected_amount_of_configurations = 2
     assert (
-        len(list(repository_path.glob("*.conf"))) == expected_amount_of_configurations
+        len(list(configurations_dir_target.glob("*.conf"))) == expected_amount_of_configurations
     ), "Existing configurations were not pulled"
 
 
@@ -148,10 +151,8 @@ def test_post_config_twice(repository_path, test_client):
     for configuration in configurations:
         post_configuration(test_client=test_client, json={"content": configuration})
 
-    expected_amount_of_configurations = 2
-    assert (
-        len(list(repository_path.glob("*.conf"))) == expected_amount_of_configurations
-    ), "Committing a second configuration didn't work"
+    repository = Repo(repository_path)
+    assert len(repository.branches) == 3  # main plus one per config
 
 
 def test_post_config_github_upload(repository_path, test_client):
@@ -159,7 +160,8 @@ def test_post_config_github_upload(repository_path, test_client):
     configuration = "test config"
     with requests_mock.Mocker() as requests_mocker:
         requests_mocker.post(
-            f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_owner}/pulls"
+            f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_name}/pulls",
+            json={"url": "https://not.a.real.url"}
         )
         post_configuration(test_client=test_client, json={"content": configuration})
 
