@@ -15,7 +15,7 @@ from fastapi.templating import Jinja2Templates
 from git import GitCommandError, InvalidGitRepositoryError
 from git.repo import Repo
 from git.util import Actor
-from netconan.anonymize_files import FileAnonymizer
+from netconan.anonymize_files import FileAnonymizer  # type: ignore
 from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
 from starlette import status
@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     ncc_repository_owner: str
     ncc_repository_name: str
     ncc_github_token: str
+    ncc_github_timeout: int = 15
     ncc_base_branch: str = "main"
     ncc_log_level: int = logging.WARNING
 
@@ -81,7 +82,7 @@ class AnonymizedConfiguration(BaseSchema):
 # Apply settings from file if present
 config_file = Path(str(files("nos_config_collector"))).parent / "config.env"
 if config_file.is_file() and os.environ.get("NCC_DEVELOPMENT", False):
-    settings = Settings(_env_file=str(config_file), _env_file_encoding="utf-8")
+    settings = Settings(_env_file=str(config_file), _env_file_encoding="utf-8")  # type: ignore
 else:
     settings = Settings()
 
@@ -169,14 +170,15 @@ async def post_config(configuration: ConfigurationToStore) -> JSONResponse:
         f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_name}/pulls",
         headers=headers,
         json=payload,
+        timeout=settings.ncc_github_timeout,
     )
 
     pr_link = None
-    error = None
+    error_message = None
 
     if response.ok:
         pr_link = response.json()["url"]
     else:
-        error = response.text
+        error_message = response.text
 
-    return JSONResponse(content={"pr_link": pr_link, "error": error}, status_code=status.HTTP_200_OK)
+    return JSONResponse(content={"pr_link": pr_link, "error": error_message}, status_code=status.HTTP_200_OK)

@@ -16,7 +16,7 @@ def repository_path(tmp_path):
     path = tmp_path / "clone_to"
     path.mkdir()
     settings.ncc_config_directory = path
-    #Repo.init(path, initial_branch=settings.ncc_base_branch)
+    # Repo.init(path, initial_branch=settings.ncc_base_branch)
     yield path
     shutil.rmtree(path)
 
@@ -152,7 +152,8 @@ def test_post_config_twice(repository_path, test_client):
         post_configuration(test_client=test_client, json={"content": configuration})
 
     repository = Repo(repository_path)
-    assert len(repository.branches) == 3  # main plus one per config
+    amount_of_branches = 3  # main plus one per config
+    assert len(repository.branches) == amount_of_branches
 
 
 def test_post_config_github_upload(repository_path, test_client):
@@ -161,7 +162,7 @@ def test_post_config_github_upload(repository_path, test_client):
     with requests_mock.Mocker() as requests_mocker:
         requests_mocker.post(
             f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_name}/pulls",
-            json={"url": "https://not.a.real.url"}
+            json={"url": "https://not.a.real.url"},
         )
         post_configuration(test_client=test_client, json={"content": configuration})
 
