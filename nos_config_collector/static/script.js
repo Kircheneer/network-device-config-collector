@@ -40,6 +40,11 @@ async function anonymize_configuration() {
 }
 
 async function submit_configuration() {
+    const modalElement = document.getElementById("finishedModal");
+    const modalBody = document.getElementById("finishedModalBody");
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+
     const name = document.getElementById("nameInput").value;
     const email = document.getElementById("githubMailInput").value;
     const configuration = configTextarea.value;
@@ -51,11 +56,11 @@ async function submit_configuration() {
         },
         body: JSON.stringify(data)
     })
-    const responseAsJSON = await response.json()
-    const toast = document.getElementById("resultToast")
+    const responseAsJSON = await response.json();
     if (responseAsJSON.pr_link) {
-        toast.value = `<a href=${responseAsJSON.pr_link}>PR</a> created.`
+        modalBody.innerHTML = `<p><a href="${responseAsJSON.pr_link}">PR</a> successfully submitted.</p>`;
     } else {
-        toast.value = `Error during creation of PR: ${responseAsJSON.error}.`
+        modalBody.innerHTML = `<p>Encountered error: ${responseAsJSON.error}</p>`;
+        console.log(responseAsJSON.error);
     }
 }

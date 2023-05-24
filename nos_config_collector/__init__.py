@@ -177,7 +177,7 @@ async def post_config(configuration: ConfigurationToStore) -> JSONResponse:
     error_message = None
 
     if response.ok:
-        pr_link = response.json()["url"]
+        pr_link = response.json()["html_url"]
     else:
         error_message = response.text
 
