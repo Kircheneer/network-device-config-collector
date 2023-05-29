@@ -1,0 +1,26 @@
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: ["ci"]
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+      - name: Build image
+        run: docker build -t ndcc .
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Log in to DO Container Registry
+        run: doctl registry login --expiry-seconds 600
+      - name: Tag image
+        run:
+          docker tag ndcc \
+          registry.digitalocean.com/ndcc-registry/ndcc:${{github.event.inputs.version }}
+      - name: Push image to DO Container Registry
+        run: docker push registry.digitalocean.com/my-sample-registry/my-sample-page:${{ github.event.inputs.version }}
