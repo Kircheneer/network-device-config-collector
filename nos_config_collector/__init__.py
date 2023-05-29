@@ -128,7 +128,13 @@ async def post_config(configuration: ConfigurationToStore) -> JSONResponse:
         settings.ncc_config_directory.mkdir(parents=True, exist_ok=True)
         repository = Repo(settings.ncc_config_directory)
     except InvalidGitRepositoryError:
-        repository = Repo.clone_from(url=settings.ncc_repository_url, to_path=settings.ncc_config_directory)
+        repository_url = settings.ncc_repository_url
+        separator = "://"
+        if separator in str(settings.ncc_repository_url):
+            schema, url = str(settings.ncc_repository_url).split(separator)
+            schema += separator
+            repository_url = f"{schema}{settings.ncc_github_token}@{url}"
+        repository = Repo.clone_from(url=repository_url, to_path=settings.ncc_config_directory)
 
     # Write configuration to the repository
     file_name = str(abs(hash(configuration.content)))  # We convert the hash to a positive number
