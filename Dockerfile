@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir --upgrade pip
 RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.5.0 python3 -
 ENV PATH="/root/.local/bin:$PATH"
 COPY pyproject.toml poetry.lock README.md .
-RUN poetry install --no-ansi --no-root --no-interaction
+RUN poetry install --no-ansi --no-root --no-interaction --without dev
 
 COPY nos_config_collector nos_config_collector
 
