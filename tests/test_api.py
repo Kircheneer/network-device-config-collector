@@ -162,7 +162,7 @@ def test_post_config_github_upload(repository_path, test_client):
     with requests_mock.Mocker() as requests_mocker:
         requests_mocker.post(
             f"https://api.github.com/repos/{settings.ncc_repository_owner}/{settings.ncc_repository_name}/pulls",
-            json={"url": "https://not.a.real.url"},
+            json={"html_url": "https://not.a.real.url"},
         )
         post_configuration(test_client=test_client, json={"content": configuration})
 
