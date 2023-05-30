@@ -1,3 +1,9 @@
+## 0.1.2 (2023-05-30)
+
+### CI
+
+- fixes deploy CI to run on all tags - again
+
 ## 0.1.1 (2023-05-30)
 
 ### CI

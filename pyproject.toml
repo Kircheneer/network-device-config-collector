@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nos-config-collector"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["Leo Kirchner <leo@kirchne.red>"]
 readme = "README.md"
