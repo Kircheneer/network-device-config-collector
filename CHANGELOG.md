@@ -1,3 +1,9 @@
+## 0.1.3 (2023-05-30)
+
+### Build
+
+- fixes COPY command for pyproject.toml and poetry.lock in Dockerfile
+
 ## 0.1.2 (2023-05-30)
 
 ### CI

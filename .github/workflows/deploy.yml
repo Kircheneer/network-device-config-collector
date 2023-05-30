@@ -23,7 +23,6 @@ jobs:
         run: doctl registry login --expiry-seconds 600
       - name: Tag image
         run:
-          docker tag ndcc \
-          registry.digitalocean.com/ndcc-registry/ndcc:${{github.event.inputs.version }}
+          docker tag ndcc registry.digitalocean.com/ndcc-registry/ndcc:${{ github.ref_name }}
       - name: Push image to DO Container Registry
-        run: docker push registry.digitalocean.com/my-sample-registry/my-sample-page:${{ github.event.inputs.version }}
+        run: docker push registry.digitalocean.com/ndcc-registry/ndcc:${{ github.ref_name }}
