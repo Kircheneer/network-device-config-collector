@@ -1,3 +1,9 @@
+## 0.2.2 (2023-05-30)
+
+### CI
+
+- tags latest automatically
+
 ## 0.2.1 (2023-05-30)
 
 ### Build
