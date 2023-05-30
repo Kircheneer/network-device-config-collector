@@ -1,3 +1,9 @@
+## 0.2.1 (2023-05-30)
+
+### Build
+
+- **docker**: switches to slim docker image
+
 ## 0.2.0 (2023-05-30)
 
 ### Feat
