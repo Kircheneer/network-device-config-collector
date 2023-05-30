@@ -1,13 +1,16 @@
-FROM python:3.10.6
+FROM python:3.11-slim
 
 WORKDIR /opt/ndcc
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV POETRY_VERSION="1.5.0"
 
 RUN pip install --no-cache-dir --upgrade pip
-RUN curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.5.0 python3 -
-ENV PATH="/root/.local/bin:$PATH"
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
+RUN curl -sSL https://install.python-poetry.org | python
+ENV PATH="${PATH}:/root/.local/bin"
 COPY pyproject.toml poetry.lock README.md ./
 RUN poetry install --no-ansi --no-root --no-interaction --without dev
 
