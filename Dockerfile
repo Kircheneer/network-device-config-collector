@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED 1
 ENV POETRY_VERSION="1.5.0"
 
 RUN pip install --no-cache-dir --upgrade pip
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl git && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSL https://install.python-poetry.org | python
 ENV PATH="${PATH}:/root/.local/bin"
