@@ -18,4 +18,4 @@ COPY nos_config_collector nos_config_collector
 
 RUN poetry install --only-root
 
-CMD ["poetry", "run", "uvicorn", "nos_config_collector:app", "--proxy-hosts", "--host", "0.0.0.0", "--port", "80"]
+CMD ["poetry", "run", "uvicorn", "nos_config_collector:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "80"]

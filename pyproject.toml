@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nos-config-collector"
-version = "1.0.0"
+version = "1.0.1"
 description = ""
 authors = ["Leo Kirchner <leo@kirchne.red>"]
 readme = "README.md"
@@ -54,7 +54,6 @@ tag_format = "$version"
 version_type = "semver"
 version_provider = "poetry"
 update_changelog_on_bump = true
-major_version_zero = true
 
 [tool.black]
 line-length = 120
