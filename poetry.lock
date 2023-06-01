@@ -675,6 +675,21 @@ reference = "master"
 resolved_reference = "5869840880bc449d9a851dc6ffa888f1f13d45cc"
 
 [[package]]
+name = "netutils"
+version = "1.4.1"
+description = "Common helper functions useful in network automation."
+category = "main"
+optional = false
+python-versions = ">=3.7,<4.0"
+files = [
+    {file = "netutils-1.4.1-py3-none-any.whl", hash = "sha256:41002e42b205149fbe6739b7fdbc778ed843e87fabba9691d3d06a35f7876fd4"},
+    {file = "netutils-1.4.1.tar.gz", hash = "sha256:4f7501478d810bcd3c64edfe064fa8962a1572636f4fceee2538fc9d3616fbe2"},
+]
+
+[package.extras]
+optionals = ["napalm (>=4.0.0,<5.0.0)"]
+
+[[package]]
 name = "packaging"
 version = "23.1"
 description = "Core utilities for Python packages"
@@ -1211,4 +1226,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "ec5c3abbb6d9ef87dec50f49d13c31bf72be62cf092b109348434db1f008200d"
+content-hash = "126e4e33427f6eb2e5877b9bb030a05009efe20ec2d1970c4109e5a1a0077633"

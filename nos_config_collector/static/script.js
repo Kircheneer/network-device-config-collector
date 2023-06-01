@@ -47,8 +47,9 @@ async function submit_configuration() {
 
     const name = document.getElementById("nameInput").value;
     const email = document.getElementById("githubMailInput").value;
+    const nos = document.getElementById("nosSelect").value;
     const configuration = configTextarea.value;
-    const data = { content: configuration, author: name, email: email }
+    const data = { content: configuration, author: name, email: email, nos: nos }
     const response = await fetch("/configurations/", {
         method: "POST",
         headers: {

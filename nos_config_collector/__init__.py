@@ -16,6 +16,7 @@ from git import GitCommandError, InvalidGitRepositoryError
 from git.repo import Repo
 from git.util import Actor
 from netconan.anonymize_files import FileAnonymizer  # type: ignore
+from netutils.lib_mapper import NETMIKO_LIB_MAPPER
 from pydantic import BaseModel, validator
 from pydantic.env_settings import BaseSettings
 from starlette import status
@@ -52,6 +53,7 @@ class ConfigurationToStore(BaseSchema):
     content: str
     author: str | None
     email: str | None
+    nos: str
 
 
 class StoredConfigurationResponse(BaseSchema):
@@ -97,7 +99,15 @@ templates = Jinja2Templates(directory="nos_config_collector/templates")
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request) -> _TemplateResponse:
     """Index page that shows the form for configuration submitting."""
-    return templates.TemplateResponse("index.html", {"request": request})
+    nos_list = list(NETMIKO_LIB_MAPPER.keys())
+    nos_list.append("other")
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "nos_list": sorted(nos_list),
+        },
+    )
 
 
 @app.post("/configurations/anonymize/")
@@ -138,7 +148,7 @@ async def post_config(configuration: ConfigurationToStore) -> JSONResponse:
 
     # Write configuration to the repository
     file_name = str(abs(hash(configuration.content)))  # We convert the hash to a positive number
-    file_path = settings.ncc_config_directory / "configurations" / f"{file_name}.conf"
+    file_path = settings.ncc_config_directory / "configurations" / configuration.nos / f"{file_name}.conf"
     file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, encoding="utf-8", mode="w") as f:
         f.write(configuration.content)
